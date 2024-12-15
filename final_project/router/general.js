@@ -4,6 +4,16 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
+// Helper function to simulate asynchronous operations
+const simulateAsync = (fn) => {
+    return new Promise((resolve, reject) => {
+        try {
+            resolve(fn());
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
 
 public_users.post("/register", (req, res) => {
     const username = req.body.username;
@@ -34,52 +44,77 @@ public_users.post("/register", (req, res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/', function (req, res) {
-
-    return res.send(books);
+public_users.get('/', (req, res) => {
+    simulateAsync(() => books)
+        .then((bookList) => res.send(bookList))
+        .catch(() => res.status(500).json({ message: "Error retrieving books" }));
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn', function (req, res) {
+public_users.get('/isbn/:isbn', (req, res) => {
     const isbn_item = req.params.isbn;
-    if (isbn_item) {
+
+    simulateAsync(() => {
+        if (!isbn_item) {
+            throw { status: 400, message: "ISBN is required" };
+        }
 
         let filtered_book = books[isbn_item];
+        if (!filtered_book) {
+            throw { status: 404, message: "Book not found" };
+        }
 
-        return res.send(filtered_book);
-    } else {
-        res.status(400).json({ message: 'No books found' });
-    }
+        return filtered_book;
+    })
+        .then((book) => res.send(book))
+        .catch((error) => res.status(error.status || 500).json({ message: error.message }));
 });
+
 
 // Get book details based on author
-public_users.get('/author/:author', function (req, res) {
+public_users.get('/author/:author', (req, res) => {
     const author_item = req.params.author;
-    if (author_item) {
-        const filtered_book = Object.values(books).filter((book) => book.author.toLowerCase().includes(author_item.toLowerCase()));
-        if (filtered_book.length > 0) {
-            return res.send(filtered_book);
-        } else {
-            res.status(404).json({ message: 'No books found for the given author' });
+
+    simulateAsync(() => {
+        if (!author_item) {
+            throw { status: 400, message: "Author parameter is required" };
         }
-    } else {
-        res.status(400).json({ message: 'Author query parameter is required' });
-    }
+
+        const filtered_books = Object.values(books).filter((book) =>
+            book.author.toLowerCase().includes(author_item.toLowerCase())
+        );
+
+        if (filtered_books.length === 0) {
+            throw { status: 404, message: "No books found for the given author" };
+        }
+
+        return filtered_books;
+    })
+        .then((books) => res.send(books))
+        .catch((error) => res.status(error.status || 500).json({ message: error.message }));
 });
 
-// Get all books based on title
-public_users.get('/title/:title', function (req, res) {
+// Get book details based on title
+public_users.get('/title/:title', (req, res) => {
     const title_item = req.params.title;
-    if (title_item) {
-        const filtered_book = Object.values(books).filter((book) => book.title.toLowerCase().includes(title_item.toLowerCase()));
-        if (filtered_book.length > 0) {
-            return res.send(filtered_book);
-        } else {
-            res.status(404).json({ message: 'No books found for the given title' });
+
+    simulateAsync(() => {
+        if (!title_item) {
+            throw { status: 400, message: "Title parameter is required" };
         }
-    } else {
-        res.status(400).json({ message: 'Title query parameter is required' });
-    }
+
+        const filtered_books = Object.values(books).filter((book) =>
+            book.title.toLowerCase().includes(title_item.toLowerCase())
+        );
+
+        if (filtered_books.length === 0) {
+            throw { status: 404, message: "No books found for the given title" };
+        }
+
+        return filtered_books;
+    })
+        .then((books) => res.send(books))
+        .catch((error) => res.status(error.status || 500).json({ message: error.message }));
 });
 
 //  Get book review
