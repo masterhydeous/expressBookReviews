@@ -55,10 +55,41 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-    //Write your code here
-    return res.status(300).json({ message: "Yet to be implemented" });
+    const isbn_item = req.params.isbn;
+    if (isbn_item) {
+
+        let filtered_book = books[isbn_item];
+        if (filtered_book) {
+            filtered_book.review = req.query.review;
+            console.log(books[isbn_item].review)
+            return res.status(200).send("Review added");
+
+        } else {
+            res.status(400).json({ message: 'No books found' });
+        }
+    } else {
+        res.status(400).json({ message: 'No books found' });
+    }
 });
 
+//Delete review
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn_item = req.params.isbn;
+    if (isbn_item) {
+
+        let filtered_book = books[isbn_item];
+        if (filtered_book) {
+            filtered_book.review = "";
+            console.log(books[isbn_item].review)
+            return res.status(200).send("Review deleted");
+
+        } else {
+            res.status(400).json({ message: 'No books found' });
+        }
+    } else {
+        res.status(400).json({ message: 'No books found' });
+    }
+});
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
